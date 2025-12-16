@@ -1,0 +1,5 @@
+{
+  "name": "DebateArena AI",
+  "description": "A multi-agent AI debate platform where two AI personas argue a topic while a third AI Judge evaluates logic and persuasion in real-time.",
+  "requestFramePermissions": []
+}
