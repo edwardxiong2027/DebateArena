@@ -2,9 +2,11 @@ import { GoogleGenAI, Type } from "@google/genai";
 import { AgentRole, Message, JudgeEvaluation } from "../types";
 import { AGENTS, GEMINI_MODEL_FAST, GEMINI_MODEL_REASONING } from "../constants";
 
-// Initialize Gemini Client
-// CRITICAL: process.env.API_KEY is assumed to be available
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+// Resolve API key from Vite env first, then fall back to process.env when available
+const apiKey = import.meta.env.VITE_GEMINI_API_KEY || (typeof process !== "undefined" ? process.env?.API_KEY : undefined);
+
+// Only initialize when we actually have a key to avoid crashing the app on load
+const ai = apiKey ? new GoogleGenAI({ apiKey }) : null;
 
 const SYSTEM_PROMPT_TEMPLATE = (role: AgentRole, topic: string) => `
 You are participating in a structured debate.
@@ -24,6 +26,11 @@ export const generateAgentResponse = async (
   topic: string,
   history: Message[]
 ): Promise<string> => {
+  if (!ai) {
+    console.warn("Gemini API key missing; returning placeholder response.");
+    return "I need an API key to debate. Please add VITE_GEMINI_API_KEY to your environment.";
+  }
+
   const modelId = GEMINI_MODEL_FAST;
 
   // Format history for context
@@ -62,6 +69,16 @@ export const generateJudgeEvaluation = async (
   history: Message[],
   judgePersona: string
 ): Promise<JudgeEvaluation> => {
+  if (!ai) {
+    console.warn("Gemini API key missing; returning neutral judge scores.");
+    return {
+      proScore: 50,
+      conScore: 50,
+      reasoning: "Provide VITE_GEMINI_API_KEY to enable judge scoring.",
+      winningSide: "TIE"
+    };
+  }
+
   const modelId = GEMINI_MODEL_REASONING;
 
   const conversationContext = history.map(msg => 
